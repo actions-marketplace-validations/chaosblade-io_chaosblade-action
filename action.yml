@@ -1,4 +1,4 @@
-name: 'CHAOSBLADE'
+name: 'ChaosBlade'
 description: 'Different chaos on Kubernetes environments'
 runs:
   using: "node12"
