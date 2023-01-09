@@ -1,0 +1,40 @@
+name: Running-Chaos
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  Chaos-build:
+    runs-on: ubuntu-20.04
+    steps:
+
+    - name: KinD (Kubernetes in Docker) Action
+      uses: engineerd/setup-kind@v0.5.0
+      run: |
+        kubectl cluster-info
+        kubectl get pods -n kube-system
+        helm version
+        echo "current-context:" $(kubectl config current-context)
+        echo "environment-kubeconfig:" ${KUBECONFIG}
+
+    - name: Deploy test app for chaos injection
+      run: |
+        kubectl apply -f https://raw.githubusercontent.com/chaosblade-io/chaosblade-ci-lib/main/app/nginx-statefulset.yaml
+        kubectl wait --for=condition=Ready pods --all --namespace default --timeout=120s
+        kubectl top pod nginx-0 -n chaos-test
+
+    - name: Run chaosblade experiment
+      uses: chaosblade/chaosblade-action@main
+      env:
+        CBCFY_BASE64: YXBpVmVyc2lvbjogY2hhb3NibGFkZS5pby92MWFscGhhMQ0Ka2luZDogQ2hhb3NCbGFkZQ0KbWV0YWRhdGE6DQogIG5hbWU6IGluY3JlYXNlLWNvbnRhaW5lci1jcHUtbG9hZC1ieS1pZA0Kc3BlYzoNCiAgZXhwZXJpbWVudHM6DQogIC0gc2NvcGU6IGNvbnRhaW5lcg0KICAgIHRhcmdldDogY3B1DQogICAgYWN0aW9uOiBmdWxsbG9hZA0KICAgIGRlc2M6ICJpbmNyZWFzZSBjb250YWluZXIgY3B1IGxvYWQgYnkgaWQiDQogICAgbWF0Y2hlcnM6DQogICAgLSBuYW1lOiBjb250YWluZXItbmFtZXMNCiAgICAgIHZhbHVlOg0KICAgICAgLSAibmdpbngiDQogICAgLSBuYW1lOiBjcHUtcGVyY2VudA0KICAgICAgdmFsdWU6IFsiMTAwIl0NCiAgICAgICMgcG9kIG5hbWVzDQogICAgLSBuYW1lOiBuYW1lcw0KICAgICAgdmFsdWU6IFsibmdpbngtMCJdDQogICAgLSBuYW1lOiBjZ3JvdXAtcm9vdA0KICAgICAgdmFsdWU6IFsiL2hvc3Qtc3lzL2ZzL2Nncm91cCJd
+        CHAOSBLADE_VERSION: v1.7.1
+      run: |
+        echo "Verify chaos injection it is in effect"
+        kubectl top pod nginx-0 -n chaos-test
+    
+    
+
