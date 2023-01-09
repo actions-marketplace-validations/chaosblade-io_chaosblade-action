@@ -1,4 +1,4 @@
-name: 'CHAOSBLADE'
+name: 'ChaosBlade Fault Inject'
 description: 'Different chaos on Kubernetes environments'
 runs:
   using: "node12"
